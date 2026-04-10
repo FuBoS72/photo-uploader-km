@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Загрузка фото КМ</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Фото КМ">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+      background: #f5f5f5;
+      max-width: 860px;
+      margin: 0 auto;
+      color: #222;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 28px;
+    }
+
+    .top-panel {
+      position: relative;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      min-height: 120px;
+    }
+
+    .top-panel.celebrate {
+      background: linear-gradient(180deg, #ffffff 0%, #f6fff8 100%);
+      box-shadow: 0 0 0 2px rgba(31, 122, 31, 0.10), 0 10px 28px rgba(31, 122, 31, 0.14);
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-text {
+      font-size: 22px;
+      font-weight: bold;
+      color: #0b57d0;
+      line-height: 1.3;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-text.error {
+      color: #b00020;
+    }
+
+    .category-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease, opacity 0.2s ease, transform 0.08s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.99);
+    }
+
+    .btn:disabled {
+      background: #9aa0a6 !important;
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+
+    .category-btn {
+      background: #007bff;
+    }
+
+    .category-btn.active {
+      background: #28a745;
+    }
+
+    .view-mode .category-btn {
+      background: #7b3ff2;
+    }
+
+    .view-mode .category-btn.active {
+      background: #5b2db4;
+    }
+
+    .mode-toggle-btn {
+      margin-top: 18px;
+      background: #dc3545;
+    }
+
+    .mode-toggle-btn.view-active {
+      background: #198754;
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    .viewer-panel {
+      display: none;
+      margin-top: 20px;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .viewer-panel.visible {
+      display: block;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      font-size: 15px;
+      background: #6c757d;
+    }
+
+    .filter-btn.active {
+      background: #0d6efd;
+    }
+
+    .files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .file-card {
+      background: #fafafa;
+      border: 1px solid #e4e4e4;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .file-thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      display: block;
+      background: #eee;
+    }
+
+    .file-info {
+      padding: 8px;
+    }
+
+    .file-name {
+      font-size: 12px;
+      line-height: 1.3;
+      word-break: break-word;
+      margin-bottom: 4px;
+    }
+
+    .file-date {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .empty-state,
+    .loading-state {
+      padding: 18px;
+      text-align: center;
+      color: #666;
+      font-size: 15px;
+    }
+
+    .image-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .image-modal.visible {
+      display: flex;
+    }
+
+    .image-modal img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 10px;
+      background: white;
+    }
+
+    .image-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .firework-burst {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      animation: burst-core 3000ms ease-out forwards;
+    }
+
+    .firework-spark {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      animation: burst-spark 3000ms ease-out forwards;
+    }
+
+    @keyframes burst-core {
+      0% { opacity: 0; transform: scale(0.2); }
+      8% { opacity: 1; transform: scale(1.8); }
+      20% { opacity: 0.7; transform: scale(2.1); }
+      100% { opacity: 0; transform: scale(2.6); }
+    }
+
+    @keyframes burst-spark {
+      0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+      10% { opacity: 1; transform: translate(0, 0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.7); }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        max-width: 720px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .btn {
+        font-size: 17px;
+      }
+
+      .step-text {
+        font-size: 19px;
+        min-height: 50px;
+      }
+
+      .top-panel {
+        min-height: 110px;
+        padding: 16px;
+      }
+
+      .files-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Загрузка фото КМ</h1>
+
+  <div id="topPanel" class="top-panel">
+    <div class="panel-title">Что делать</div>
+    <div id="stepText" class="step-text">Шаг 1. Выберите категорию фотографий</div>
+  </div>
+
+  <div class="category-title">Категория</div>
+
+  <button class="btn category-btn" data-category="Столешницы в ванную" onclick="handleCategoryClick(this)">Столешницы в ванную</button>
+  <button class="btn category-btn" data-category="Кухонные столешницы" onclick="handleCategoryClick(this)">Кухонные столешницы</button>
+  <button class="btn category-btn" data-category="Подоконники" onclick="handleCategoryClick(this)">Подоконники</button>
+  <button class="btn category-btn" data-category="Барные стойки" onclick="handleCategoryClick(this)">Барные стойки</button>
+  <button class="btn category-btn" data-category="Камины" onclick="handleCategoryClick(this)">Камины</button>
+  <button class="btn category-btn" data-category="Лестницы" onclick="handleCategoryClick(this)">Лестницы</button>
+  <button class="btn category-btn" data-category="Общепит" onclick="handleCategoryClick(this)">Общепит</button>
+
+  <button id="modeToggleBtn" class="btn mode-toggle-btn" onclick="toggleMode()">Посмотреть файлы</button>
+
+  <div id="viewerPanel" class="viewer-panel">
+    <div class="filter-row">
+      <button class="btn filter-btn active" data-period="week" onclick="changePeriod(this)">Неделя</button>
+      <button class="btn filter-btn" data-period="month" onclick="changePeriod(this)">Месяц</button>
+      <button class="btn filter-btn" data-period="all" onclick="changePeriod(this)">Все файлы</button>
+    </div>
+
+    <div id="filesContainer" class="loading-state">Выберите категорию для просмотра</div>
+  </div>
+
+  <div id="imageModal" class="image-modal" onclick="closeImageModal(event)">
+    <button class="image-modal-close" type="button" onclick="forceCloseImageModal()">Закрыть</button>
+    <img id="modalImage" src="" alt="Просмотр фото">
+  </div>
+
+  <input type="file" id="fileInput" class="hidden-input" multiple accept="image/*">
+
+  <script>
+    const API_URL = "https://functions.yandexcloud.net/d4eot5j464d7t0o695hp";
+    const STORAGE_KEY = "photo_uploader_user_name";
+    const COOKIE_KEY = "photo_uploader_user_name";
+
+    let selectedCategory = "";
+    let isUploading = false;
+    let celebrationTimeout = null;
+    let isViewMode = false;
+    let currentViewCategory = "";
+    let currentPeriod = "week";
+
+    const fileInput = document.getElementById("fileInput");
+    const stepText = document.getElementById("stepText");
+    const topPanel = document.getElementById("topPanel");
+    const modeToggleBtn = document.getElementById("modeToggleBtn");
+    const viewerPanel = document.getElementById("viewerPanel");
+    const filesContainer = document.getElementById("filesContainer");
+    const categoryButtons = Array.from(document.querySelectorAll(".category-btn"));
+    const filterButtons = Array.from(document.querySelectorAll(".filter-btn"));
+    const imageModal = document.getElementById("imageModal");
+    const modalImage = document.getElementById("modalImage");
+
+    const uploaderName = getUploaderName();
+
+    fileInput.addEventListener("change", handleFileSelection);
+
+    function handleCategoryClick(button) {
+      if (isUploading) return;
+
+      const category = button.dataset.category;
+
+      if (isViewMode) {
+        openCategoryViewer(category, button);
+        return;
+      }
+
+      startCategorySelection(button);
+    }
+
+    function startCategorySelection(button) {
+      if (isUploading) return;
+
+      selectedCategory = button.dataset.category;
+
+      categoryButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      fileInput.value = "";
+      fileInput.click();
+    }
+
+    function toggleMode() {
+      if (isUploading) return;
+
+      if (isViewMode) {
+        resetToUploadMode();
+      } else {
+        setViewMode();
+      }
+    }
+
+    function setViewMode() {
+      isViewMode = true;
+      document.body.classList.add("view-mode");
+      clearCategorySelection();
+      selectedCategory = "";
+      currentViewCategory = "";
+      currentPeriod = "week";
+      setActivePeriodButton("week");
+      modeToggleBtn.textContent = "Скинуть файлы";
+      modeToggleBtn.classList.add("view-active");
+      viewerPanel.classList.add("visible");
+      filesContainer.className = "loading-state";
+      filesContainer.textContent = "Выберите категорию для просмотра";
+      setStepText("Режим просмотра. Выберите категорию");
+    }
+
+    function resetToUploadMode() {
+      isViewMode = false;
+      document.body.classList.remove("view-mode");
+      clearCategorySelection();
+      selectedCategory = "";
+      currentViewCategory = "";
+      currentPeriod = "week";
+      setActivePeriodButton("week");
+      viewerPanel.classList.remove("visible");
+      modeToggleBtn.textContent = "Посмотреть файлы";
+      modeToggleBtn.classList.remove("view-active");
+      stepText.classList.remove("error");
+      stepText.textContent = "Шаг 1. Выберите категорию фотографий";
+    }
+
+    async function openCategoryViewer(category, button) {
+      if (!uploaderName) {
+        setErrorText("Не найдено имя сотрудника");
+        return;
+      }
+
+      currentViewCategory = category;
+      categoryButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      await loadFiles(category, currentPeriod);
+    }
+
+    async function changePeriod(button) {
+      if (!isViewMode || !currentViewCategory) return;
+
+      const period = button.dataset.period;
+      currentPeriod = period;
+      setActivePeriodButton(period);
+      await loadFiles(currentViewCategory, currentPeriod);
+    }
+
+    function setActivePeriodButton(period) {
+      filterButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.period === period);
+      });
+    }
+
+  async function loadFiles(category, period) {
+    filesContainer.className = "loading-state";
+    filesContainer.textContent = "Загружаем список файлов...";
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "list",
+          category: category,
+          user: uploaderName,
+          period: period
+        })
+      });
+
+      const text = await response.text();
+      let data = {};
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        throw new Error(text || "Некорректный ответ сервера");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || text || "Не удалось получить список файлов");
+      }
+
+      renderFiles(data.items || []);
+    } catch (error) {
+      filesContainer.className = "empty-state";
+      filesContainer.textContent = error.message || "Не удалось загрузить файлы";
+    }
+  }
+
+    function renderFiles(items) {
+      if (!items.length) {
+        filesContainer.className = "empty-state";
+        filesContainer.textContent = "Файлы не найдены";
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "files-grid";
+
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "file-card";
+        card.onclick = () => openImage(item.path);
+
+        const img = document.createElement("img");
+        img.className = "file-thumb";
+        img.src = item.previewUrl || "";
+        img.alt = item.name;
+        img.loading = "lazy";
+
+        const info = document.createElement("div");
+        info.className = "file-info";
+
+        const name = document.createElement("div");
+        name.className = "file-name";
+        name.textContent = item.name;
+
+        const date = document.createElement("div");
+        date.className = "file-date";
+        date.textContent = item.displayDate || "";
+
+        info.appendChild(name);
+        info.appendChild(date);
+        card.appendChild(img);
+        card.appendChild(info);
+        grid.appendChild(card);
+      });
+
+      filesContainer.className = "";
+      filesContainer.innerHTML = "";
+      filesContainer.appendChild(grid);
+    }
+
+function openImage(path) {
+  modalImage.src = `${API_URL}?action=image&path=${encodeURIComponent(path)}`;
+  imageModal.classList.add("visible");
+}
+
+    function closeImageModal(event) {
+      if (event.target === imageModal) {
+        forceCloseImageModal();
+      }
+    }
+
+    function forceCloseImageModal() {
+      imageModal.classList.remove("visible");
+      modalImage.src = "";
+    }
+
+    async function handleFileSelection() {
+      if (isUploading) return;
+
+      const files = fileInput.files;
+
+      if (!files.length) {
+        clearCategorySelection();
+        selectedCategory = "";
+        setStepText("Шаг 1. Выберите категорию фотографий");
+        return;
+      }
+
+      await uploadFiles(files);
+    }
+
+    async function uploadFiles(files) {
+      if (!files.length || !selectedCategory || isUploading) {
+        return;
+      }
+
+      if (!uploaderName) {
+        setErrorText("Не найдено имя сотрудника");
+        return;
+      }
+
+      isUploading = true;
+      setControlsDisabled(true);
+
+      try {
+        const totalFiles = files.length;
+
+        for (let i = 0; i < totalFiles; i++) {
+          const file = files[i];
+          const remainingBeforeUpload = totalFiles - i;
+
+          setStepText(`Идёт загрузка в: ${selectedCategory} (${remainingBeforeUpload})`);
+
+          const extension = getFileExtension(file.name);
+
+          const now = new Date();
+          const date = now.toISOString().slice(0, 10);
+          const time = now.toTimeString().slice(0, 8).replace(/:/g, "");
+          const number = String(i + 1).padStart(3, "0");
+
+          const fileName = `${date}_${time}_${number}_${uploaderName}.${extension}`;
+
+          const initResponse = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              action: "upload",
+              category: selectedCategory,
+              fileName: fileName
+            })
+          });
+
+          const initText = await initResponse.text();
+          let initData = {};
+
+          try {
+            initData = initText ? JSON.parse(initText) : {};
+          } catch (e) {
+            throw new Error(initText || "Некорректный ответ сервера");
+          }
+
+          if (!initResponse.ok || !initData.uploadUrl) {
+            throw new Error(initData.error || initText || "Не удалось получить ссылку загрузки");
+          }
+
+          const uploadResponse = await fetch(initData.uploadUrl, {
+            method: "PUT",
+            body: file
+          });
+
+          if (!uploadResponse.ok) {
+            const uploadErrorText = await uploadResponse.text();
+            throw new Error(uploadErrorText || "Не удалось загрузить файл на Яндекс Диск");
+          }
+        }
+
+        showCelebrateAndReset();
+      } catch (error) {
+        setErrorText(error.message || "Ошибка загрузки");
+        setControlsDisabled(false);
+      } finally {
+        isUploading = false;
+      }
+    }
+
+    function showCelebrateAndReset() {
+      fileInput.value = "";
+      clearCategorySelection();
+      selectedCategory = "";
+
+      setControlsDisabled(false);
+      celebratePanel();
+
+      clearTimeout(celebrationTimeout);
+      celebrationTimeout = setTimeout(() => {
+        topPanel.classList.remove("celebrate");
+        clearFireworks();
+        stepText.classList.remove("error");
+        stepText.textContent = "Шаг 1. Выберите категорию фотографий";
+      }, 3000);
+    }
+
+    function celebratePanel() {
+      topPanel.classList.add("celebrate");
+      stepText.classList.remove("error");
+      stepText.textContent = "";
+      clearFireworks();
+
+      const colors = ["#22c55e", "#0ea5e9", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#ffcc00"];
+      const panelWidth = topPanel.clientWidth;
+      const panelHeight = topPanel.clientHeight;
+      const centers = [
+        { x: panelWidth * 0.22, y: panelHeight * 0.38 },
+        { x: panelWidth * 0.50, y: panelHeight * 0.30 },
+        { x: panelWidth * 0.78, y: panelHeight * 0.42 }
+      ];
+
+      centers.forEach((center, burstIndex) => {
+        setTimeout(() => {
+          createBurst(center.x, center.y, colors);
+        }, burstIndex * 450);
+      });
+
+      setTimeout(() => {
+        centers.forEach((center, burstIndex) => {
+          setTimeout(() => {
+            createBurst(
+              center.x + randomBetween(-30, 30),
+              center.y + randomBetween(-10, 25),
+              colors
+            );
+          }, burstIndex * 380);
+        });
+      }, 1200);
+    }
+
+    function createBurst(centerX, centerY, colors) {
+      const core = document.createElement("div");
+      core.className = "firework-burst";
+      core.style.left = `${centerX}px`;
+      core.style.top = `${centerY}px`;
+      core.style.background = colors[Math.floor(Math.random() * colors.length)];
+      topPanel.appendChild(core);
+
+      const sparksCount = 18;
+      const radiusMin = 40;
+      const radiusMax = 95;
+
+      for (let i = 0; i < sparksCount; i++) {
+        const angle = (Math.PI * 2 * i) / sparksCount;
+        const radius = randomBetween(radiusMin, radiusMax);
+        const dx = Math.cos(angle) * radius;
+        const dy = Math.sin(angle) * radius;
+
+        const spark = document.createElement("div");
+        spark.className = "firework-spark";
+        spark.style.left = `${centerX}px`;
+        spark.style.top = `${centerY}px`;
+        spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+        spark.style.setProperty("--dx", `${dx}px`);
+        spark.style.setProperty("--dy", `${dy}px`);
+        spark.style.animationDuration = `${2200 + Math.random() * 900}ms`;
+        topPanel.appendChild(spark);
+      }
+    }
+
+    function clearFireworks() {
+      const bursts = topPanel.querySelectorAll(".firework-burst, .firework-spark");
+      bursts.forEach(item => item.remove());
+    }
+
+    function clearCategorySelection() {
+      categoryButtons.forEach(btn => btn.classList.remove("active"));
+    }
+
+    function setControlsDisabled(disabled) {
+      categoryButtons.forEach(btn => {
+        btn.disabled = disabled;
+      });
+      modeToggleBtn.disabled = disabled;
+      filterButtons.forEach(btn => {
+        btn.disabled = disabled;
+      });
+    }
+
+    function setStepText(text) {
+      topPanel.classList.remove("celebrate");
+      clearFireworks();
+      clearTimeout(celebrationTimeout);
+      stepText.classList.remove("error");
+      stepText.textContent = text;
+    }
+
+    function setErrorText(text) {
+      topPanel.classList.remove("celebrate");
+      clearFireworks();
+      clearTimeout(celebrationTimeout);
+      stepText.classList.add("error");
+      stepText.textContent = text;
+    }
+
+    function getFileExtension(fileName) {
+      const parts = fileName.split(".");
+      if (parts.length < 2) {
+        return "jpg";
+      }
+      return parts.pop().toLowerCase();
+    }
+
+    function getUploaderName() {
+      const params = new URLSearchParams(window.location.search);
+
+      const rawFromUrl =
+        params.get("user") ||
+        params.get("User") ||
+        params.get("USER") ||
+        "";
+
+      const sanitizedFromUrl = sanitizeName(rawFromUrl);
+
+      if (sanitizedFromUrl) {
+        saveUploaderName(sanitizedFromUrl);
+        return sanitizedFromUrl;
+      }
+
+      const fromStorage = sanitizeName(localStorage.getItem(STORAGE_KEY) || "");
+      if (fromStorage) {
+        saveUploaderName(fromStorage);
+        return fromStorage;
+      }
+
+      const fromCookie = sanitizeName(getCookie(COOKIE_KEY) || "");
+      if (fromCookie) {
+        saveUploaderName(fromCookie);
+        return fromCookie;
+      }
+
+      return "";
+    }
+
+    function saveUploaderName(name) {
+      try {
+        localStorage.setItem(STORAGE_KEY, name);
+      } catch (e) {}
+
+      document.cookie =
+        `${COOKIE_KEY}=${encodeURIComponent(name)}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+
+    function getCookie(name) {
+      const prefix = `${name}=`;
+      const cookies = document.cookie ? document.cookie.split("; ") : [];
+
+      for (const cookie of cookies) {
+        if (cookie.startsWith(prefix)) {
+          return decodeURIComponent(cookie.slice(prefix.length));
+        }
+      }
+
+      return "";
+    }
+
+    function sanitizeName(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zа-яё0-9_-]/gi, "")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+  </script>
+
+</body>
+</html>
